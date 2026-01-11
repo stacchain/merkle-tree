@@ -8,8 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added **"Deep Integrity"** specification: defined how to bind metadata hashes to physical file checksums using the [File Info Extension](https://github.com/stac-extensions/file).
+- Added `Dependencies` field to the extension header.
 
 ### Changed
+- Updated **Hash Computation** rules to strongly recommend including `assets` (specifically `file:checksum`) in the `merkle:object_hash` to ensure data integrity.
 
 ### Deprecated
 
