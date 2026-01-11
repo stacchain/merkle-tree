@@ -9,11 +9,9 @@
   - [File Info Extension](https://github.com/stac-extensions/file) (Recommended for Deep Integrity)
 - **Owner**: @jonhealy1
 
-This extension specifies a way to ensure metadata integrity for STAC Items, Collections, and Catalogs by encoding them in a Merkle tree via
-hashing. Each STAC object (Item, Collection, or Catalog) is hashed using a hash function (e.g., SHA-256), and this hash is stored in the
-object's properties under the `merkle:object_hash` field. Details concerning the methods used for hashing are stored in a separate object
-called `merkle:hash_method`. To produce the Merkle root identifier for a Collection or Catalog, the hashes from its child objects are taken
-into account. This process ensures the integrity of all STAC objects within the hierarchy.
+This extension specifies a way to ensure metadata integrity for STAC Items, Collections, and Catalogs by encoding them in a Merkle tree via hashing. Each STAC object (Item, Collection, or Catalog) is hashed using a hash function (e.g., SHA-256), and this hash is stored in the object's properties under the `merkle:object_hash` field. Details concerning the methods used for hashing are stored in a separate object called `merkle:hash_method`.
+
+To produce the Merkle root identifier for a Collection or Catalog, the hashes from its child objects are aggregated. This structure allows for the generation of **Merkle Proofs**, which enable efficient verification of any individual STAC object against the Collection Root without requiring access to the entire dataset.
 
 To achieve **Deep Integrity** (verifying not just the metadata, but the data files themselves), this extension utilizes fields defined in the **File Info Extension**. By binding the `merkle:object_hash` to the `file:checksum` of the assets, the cryptographic proof extends to the binary files themselves.
 
@@ -23,6 +21,24 @@ To achieve **Deep Integrity** (verifying not just the metadata, but the data fil
   - [Catalog example](examples/catalog.json): Shows the basic usage of the extension in a STAC Catalog.
 - [JSON Schema](json-schema/schema.json)
 - [Changelog](./CHANGELOG.md)
+
+## Table of Contents
+
+- [Fields](#fields)
+  - [Additional Field Information](#additional-field-information)
+  - [Hash Method Object](#hash-method-object)
+- [Deep Integrity & File Hashing](#deep-integrity--file-hashing)
+- [Merkle Proofs](#merkle-proofs)
+  - [Linking to a Proof](#linking-to-a-proof)
+  - [Proof Object Schema](#proof-object-schema)
+  - [Example Proof](#example-proof)
+- [Computing Hashes and Merkle Roots](#computing-hashes-and-merkle-roots)
+  - [Computing `merkle:object_hash`](#computing-merkleobject_hash)
+  - [Computing `merkle:root`](#computing-merkleroot)
+  - [Computing the Merkle Proof](#computing-the-merkle-proof)
+- [Examples](#examples)
+- [Relation types](#relation-types)
+- [Contributing](#contributing)
 
 ## Fields
 
@@ -83,15 +99,68 @@ The `merkle:hash_method` object provides details about the hash computation meth
 
 ## Deep Integrity & File Hashing
 
-To ensure the integrity of the underlying data files (e.g., Cloud Optimized GeoTIFFs), implementations are **STRONGLY RECOMMENDED** to use the [File Info Extension](https://github.com/stac-extensions/file) in conjunction with this extension.
+To ensure the integrity of the underlying data files (e.g., Cloud Optimized GeoTIFFs), implementations are **STRONGLY RECOMMENDED** to use the
+[File Info Extension](https://github.com/stac-extensions/file) in conjunction with this extension.
 
-1.  **Implement File Info Extension:** The Item MUST include the File Info Extension URI (`https://stac-extensions.github.io/file/v2.1.0/schema.json`) in its `stac_extensions` list.
-2.  **Calculate File Hash:** Compute the checksum of the physical asset file.
-    * *Note:* The File Info Extension requires checksums to be **Multihash** compliant (hexadecimal string).
-3.  **Store in Asset:** Store this value in the Asset definition using the `file:checksum` field.
-4.  **Include in Merkle Hash:** Ensure the `assets` object (specifically the `file:checksum` fields) is included in the `merkle:object_hash` calculation.
+1. **Implement File Info Extension:** The Item MUST include the File Info Extension URI
+   (`https://stac-extensions.github.io/file/v2.1.0/schema.json`) in its `stac_extensions` list.
+2. **Calculate File Hash:** Compute the checksum of the physical asset file.
+   - *Note:* The File Info Extension requires checksums to be **Multihash** compliant (hexadecimal string).
+3. **Store in Asset:** Store this value in the Asset definition using the `file:checksum` field.
+4. **Include in Merkle Hash:** Ensure the `assets` object (specifically the `file:checksum` fields) is included in the `merkle:object_hash`
+   calculation.
 
-This binds the physical file to the metadata. If the file on S3 is swapped or corrupted, its checksum changes, invalidating the Asset metadata, which invalidates the Item hash, which invalidates the Collection Root.
+This binds the physical file to the metadata. If the file on S3 is swapped or corrupted, its checksum changes, invalidating the Asset metadata,
+which invalidates the Item hash, which invalidates the Collection Root.
+
+## Merkle Proofs
+
+While `merkle:hash_method` allows a user to verify an individual object's hash, verifying that an object belongs to a specific Collection Root would typically require access to the entire collection (to reconstruct the full tree). To enable efficient verification (O(log n)) without downloading the full dataset, implementations SHOULD provide a **Merkle Proof** (also known as an audit path or witness).
+
+### Linking to a Proof
+STAC objects SHOULD provide a link to their proof using the `merkle-proof` relation. This link may point to a static file (e.g., on S3) or a dynamic API endpoint.
+
+```json
+"links": [
+  {
+    "rel": "merkle-proof",
+    "href": "https://example.com/collections/c1/items/i1/proof.json",
+    "type": "application/json",
+    "title": "Merkle Inclusion Proof"
+  }
+]
+```
+
+### Proof Object Schema
+
+The resource at the `merkle-proof` link MUST return a JSON object with the following structure:
+
+| Field Name | Type | Description |
+| :--- | :--- | :--- |
+| `target_hash` | string | **REQUIRED.** The `merkle:object_hash` of the Item being proven. |
+| `root` | string | **REQUIRED.** The `merkle:root` of the Collection/Catalog this Item belongs to. |
+| `path` | [Proof Node] | **REQUIRED.** An ordered list of sibling hashes required to reconstruct the root. |
+
+### Example Proof
+
+This JSON allows a client to take the Item's hash, combine it with the hashes in path, and confirm the result matches root.
+
+```json
+{
+  "target_hash": "3a7bd3e2360a8e7d9f5b1c2d4e6f7890abcdef1234567890abcdef1234567890",
+  "root": "abc123def4567890abcdef1234567890abcdef1234567890abcdef1234567890",
+  "path": [
+    {
+      "position": "right",
+      "hash": "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4"
+    },
+    {
+      "position": "left",
+      "hash": "2b26b46c6b3c9657f86494796342f7c00e62059c4033757f446574676528d223"
+    }
+  ]
+}
+```
 
 ## Computing Hashes and Merkle Roots
 
@@ -116,6 +185,19 @@ This binds the physical file to the metadata. If the file on S3 is swapped or co
 3. **Build Merkle Tree:**
    - Pairwise hash the ordered hashes, proceeding up the tree until a single hash remains—the `merkle:root`.
 
+### Computing the Merkle Proof
+
+To generate a proof for a specific child object (Target) within a tree:
+
+1. **Identify Target:** Locate the `merkle:object_hash` of the Target object in the sorted list of all children hashes.
+2. **Initialize Path:** Create an empty list for the `path`.
+3. **Traverse Tree:**
+- Pair the Target hash with its **Sibling** (the adjacent hash in the sorted list).
+- **Record Sibling:** Add the Sibling's `hash` and relative `position` ("left" or "right") to the `path`.
+- **Hash Upwards:** Compute the parent hash by concatenating and hashing the pair.
+- **Repeat:** Treat this new parent hash as the current Target and repeat the process until the **Root** is reached.
+4. **Finalize:** The resulting ordered list is the `path`.
+
 ## Examples
 
 ### Item Example (With File Integrity)
@@ -139,7 +221,14 @@ This binds the physical file to the metadata. If the file on S3 is swapped or co
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "file:checksum": "12204a1b..." // Multihash (SHA-256)
     }
-  }
+  },
+  "links": [
+    {
+      "rel": "merkle-proof",
+      "href": "https://storage.example.com/proofs/item-001.json",
+      "type": "application/json"
+    }
+  ]
 }
 ```
 
@@ -159,7 +248,22 @@ This binds the physical file to the metadata. If the file on S3 is swapped or co
     "ordering": "ascending",
     "description": "Includes assets to ensure file integrity via file:checksum."
   },
-  "stac_extensions": ["https://stacchain.github.io/merkle/v1.0.0/schema.json"]
+  "stac_extensions": [
+    "https://stac-extensions.github.io/file/v2.1.0/schema.json",
+    "https://stacchain.github.io/merkle-tree/v1.0.0/schema.json"
+  ],
+  "links": [
+    {
+       "rel": "root",
+       "href": "https://example.com/catalog-001.json"
+    },
+    {
+       "rel": "merkle-proof", 
+       "href": "https://example.com/proofs/collection-123.json",
+       "type": "application/json",
+       "title": "Proof of membership in Master Catalog"
+    }
+  ]
 }
 ```
 
