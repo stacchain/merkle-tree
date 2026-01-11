@@ -9,11 +9,20 @@
   - [File Info Extension](https://github.com/stac-extensions/file) (Recommended for Deep Integrity)
 - **Owner**: @jonhealy1
 
-This extension specifies a way to ensure metadata integrity for STAC Items, Collections, and Catalogs by encoding them in a Merkle tree via hashing. Each STAC object (Item, Collection, or Catalog) is hashed using a hash function (e.g., SHA-256), and this hash is stored in the object's properties under the `merkle:object_hash` field. Details concerning the methods used for hashing are stored in a separate object called `merkle:hash_method`.
+This extension specifies a way to ensure metadata integrity for STAC Items, Collections, and Catalogs by encoding them in a Merkle tree via hashing. 
+Each STAC object is hashed using a hash function (e.g., SHA-256), 
+and this hash is stored in the object's properties under the `merkle:object_hash` field. 
+Details concerning the methods used for hashing are stored in a separate object called `merkle:hash_method`.
 
-To produce the Merkle root identifier for a Collection or Catalog, the hashes from its child objects are aggregated. This structure allows for the generation of **Merkle Proofs**, which enable efficient verification of any individual STAC object against the Collection Root without requiring access to the entire dataset.
+To produce the Merkle root identifier for a Collection or Catalog, the hashes from its child objects are aggregated. 
+This structure allows for the generation of **Merkle Proofs**, 
+which enable efficient verification of any individual STAC object against the Collection Root without requiring access to the entire dataset.
 
-To achieve **Deep Integrity** (verifying not just the metadata, but the data files themselves), this extension utilizes fields defined in the **File Info Extension**. By binding the `merkle:object_hash` to the `file:checksum` of the assets, the cryptographic proof extends to the binary files themselves.
+To achieve **Deep Integrity** (verifying not just the metadata, 
+but the data files themselves), this extension utilizes fields defined 
+in the **File Info Extension**. By binding the `merkle:object_hash` to 
+the `file:checksum` of the assets, the cryptographic proof extends to 
+the binary files themselves.
 
 - **Examples:**
   - [Item example](examples/item.json): Shows the basic usage of the extension in a STAC Item.
@@ -115,10 +124,17 @@ which invalidates the Item hash, which invalidates the Collection Root.
 
 ## Merkle Proofs
 
-While `merkle:hash_method` allows a user to verify an individual object's hash, verifying that an object belongs to a specific Collection Root would typically require access to the entire collection (to reconstruct the full tree). To enable efficient verification (O(log n)) without downloading the full dataset, implementations SHOULD provide a **Merkle Proof** (also known as an audit path or witness).
+While `merkle:hash_method` allows a user to verify an individual object's hash, 
+verifying that an object belongs to a specific Collection Root would typically 
+require access to the entire collection (to reconstruct the full tree). 
+To enable efficient verification (O(log n)) without downloading the full 
+dataset, implementations SHOULD provide a **Merkle Proof** 
+(also known as an audit path or witness).
 
 ### Linking to a Proof
-STAC objects SHOULD provide a link to their proof using the `merkle-proof` relation. This link may point to a static file (e.g., on S3) or a dynamic API endpoint.
+STAC objects SHOULD provide a link to their proof using the 
+`merkle-proof` relation. This link may point to a static file 
+(e.g., on S3) or a dynamic API endpoint.
 
 ```json
 "links": [
