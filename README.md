@@ -5,6 +5,8 @@
 - **Field Name Prefix:** `merkle`
 - **Scope:** Item, Collection, Catalog
 - **Extension [Maturity Classification](https://github.com/radiantearth/stac-spec/tree/master/extensions/README.md#extension-maturity):** Proposal
+- **Dependencies:**
+  - [File Info Extension](https://github.com/stac-extensions/file) (Recommended for Deep Integrity)
 - **Owner**: @jonhealy1
 
 This extension specifies a way to ensure metadata integrity for STAC Items, Collections, and Catalogs by encoding them in a Merkle tree via
@@ -12,6 +14,8 @@ hashing. Each STAC object (Item, Collection, or Catalog) is hashed using a hash 
 object's properties under the `merkle:object_hash` field. Details concerning the methods used for hashing are stored in a separate object
 called `merkle:hash_method`. To produce the Merkle root identifier for a Collection or Catalog, the hashes from its child objects are taken
 into account. This process ensures the integrity of all STAC objects within the hierarchy.
+
+To achieve **Deep Integrity** (verifying not just the metadata, but the data files themselves), this extension utilizes fields defined in the **File Info Extension**. By binding the `merkle:object_hash` to the `file:checksum` of the assets, the cryptographic proof extends to the binary files themselves.
 
 - **Examples:**
   - [Item example](examples/item.json): Shows the basic usage of the extension in a STAC Item.
@@ -27,7 +31,7 @@ The fields in the table below can be used in these parts of STAC documents:
 - [x] Catalogs
 - [x] Collections
 - [x] Item Properties (incl. Summaries in Collections)
-- [ ] Assets (for both Collections and Items, incl. Item Asset Definitions in Collections)
+- [x] Assets (via File Info Extension recommendation)
 - [ ] Links
 
 | Field Name           | Type                                      | Description                                                                                                                                                                                                                                                                                                                       |
@@ -77,16 +81,28 @@ The `merkle:hash_method` object provides details about the hash computation meth
 | `ordering`    | string     | **REQUIRED** (for Collections and Catalogs). Describes how the hashes are ordered when building the Merkle tree (e.g., "ascending by hash value").                                                                                                |
 | `description` | string     | Optional. Additional details or notes about the hash computation method, such as serialization format or any special considerations.                                                                                                              |
 
+## Deep Integrity & File Hashing
+
+To ensure the integrity of the underlying data files (e.g., Cloud Optimized GeoTIFFs), implementations are **STRONGLY RECOMMENDED** to use the [File Info Extension](https://github.com/stac-extensions/file) in conjunction with this extension.
+
+1.  **Implement File Info Extension:** The Item MUST include the File Info Extension URI (`https://stac-extensions.github.io/file/v2.1.0/schema.json`) in its `stac_extensions` list.
+2.  **Calculate File Hash:** Compute the checksum of the physical asset file.
+    * *Note:* The File Info Extension requires checksums to be **Multihash** compliant (hexadecimal string).
+3.  **Store in Asset:** Store this value in the Asset definition using the `file:checksum` field.
+4.  **Include in Merkle Hash:** Ensure the `assets` object (specifically the `file:checksum` fields) is included in the `merkle:object_hash` calculation.
+
+This binds the physical file to the metadata. If the file on S3 is swapped or corrupted, its checksum changes, invalidating the Asset metadata, which invalidates the Item hash, which invalidates the Collection Root.
+
 ## Computing Hashes and Merkle Roots
 
 ### Computing `merkle:object_hash`
 
 1. **Prepare Metadata:**
    - Include all fields specified in `merkle:hash_method.fields`.
+   - **Recommendation:** Explicitly include `assets` to capture `file:checksum` values.
    - If `fields` is `"*"` or `"all"`, include all fields of the object.
 2. **Serialize Metadata:**
-   - Use canonical JSON serialization with sorted keys and consistent formatting.
-   - Ensure consistent encoding (e.g., UTF-8).
+   - Use canonical JSON serialization (RFC 8785) with sorted keys to ensure reproducibility.
 3. **Compute Hash:**
    - Apply the specified cryptographic hash function (e.g., SHA-256) to the serialized metadata.
 
@@ -99,32 +115,30 @@ The `merkle:hash_method` object provides details about the hash computation meth
    - Order the hashes according to the method specified in `merkle:hash_method.ordering`.
 3. **Build Merkle Tree:**
    - Pairwise hash the ordered hashes, proceeding up the tree until a single hash remains—the `merkle:root`.
-4. **Include `merkle:hash_method`:**
-   - Specify the method used in the Collection's or Catalog's `merkle:hash_method` field, including any details necessary for users
-     to replicate the process.
 
 ## Examples
 
-### Item Example
+### Item Example (With File Integrity)
 
 ```jsonc
 {
   "type": "Feature",
   "stac_version": "1.1.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/file/v2.1.0/schema.json",
+    "https://stacchain.github.io/merkle-tree/v1.0.0/schema.json"
+  ],
   "id": "item-001",
   "properties": {
     "datetime": "2024-10-15T12:00:00Z",
     "merkle:object_hash": "3a7bd3e2360a8e7d9f5b1c2d4e6f7890abcdef1234567890abcdef1234567890"
-    // ... other properties
   },
-  "geometry": {
-    // ... geometry definition
-  },
-  "links": [
-    // ... item links
-  ],
   "assets": {
-    // ... item assets
+    "visual": {
+      "href": "https://storage.example.com/item-001.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "file:checksum": "12204a1b..." // Multihash (SHA-256)
+    }
   }
 }
 ```
@@ -141,17 +155,10 @@ The `merkle:hash_method` object provides details about the hash computation meth
   "merkle:root": "abc123def4567890abcdef1234567890abcdef1234567890abcdef1234567890",
   "merkle:hash_method": {
     "function": "sha256",
-    "fields": ["*"],
+    "fields": ["properties", "assets", "geometry"],
     "ordering": "ascending",
-    "description": "Computed by including merkle:object_hash values in ascending order and building the Merkle tree."
+    "description": "Includes assets to ensure file integrity via file:checksum."
   },
-  "extent": {
-    // ... spatial and temporal extent
-  },
-  "links": [
-    // ... collection links
-  ],
-  "license": "proprietary",
   "stac_extensions": ["https://stacchain.github.io/merkle/v1.0.0/schema.json"]
 }
 ```
