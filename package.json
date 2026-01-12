@@ -8,7 +8,7 @@
     "format-examples": "stac-node-validator . --format --schemaMap https://stac-extensions.github.io/template/v1.0.0/schema.json=./json-schema/schema.json"
   },
   "dependencies": {
-    "remark-cli": "^12.0.0",
+    "remark-cli": "^12.0.1",
     "remark-gfm": "^4.0.0",
     "remark-lint": "^9.1.2",
     "remark-lint-no-html": "^3.1.2",

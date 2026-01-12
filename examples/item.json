@@ -1,6 +1,7 @@
 {
   "stac_version": "1.1.0",
   "stac_extensions": [
+    "https://stac-extensions.github.io/file/v2.1.0/schema.json",
     "https://stacchain.github.io/merkle-tree/v1.0.0/schema.json"
   ],
   "type": "Feature",
@@ -46,12 +47,18 @@
     {
       "href": "https://example.com/examples/item.json",
       "rel": "self"
+    },
+    {
+      "rel": "merkle-proof",
+      "href": "https://storage.example.com/proofs/item-001.json",
+      "type": "application/json"
     }
   ],
   "assets": {
     "data": {
       "href": "https://example.com/examples/file.xyz",
-      "template:new_field": "test"
+      "type": "image/tiff; application=geotiff",
+      "file:checksum": "12204a1b0b3e2360a8e7d9f5b1c2d4e6f7890abcdef1234567890abcdef123456"
     }
   }
 }
