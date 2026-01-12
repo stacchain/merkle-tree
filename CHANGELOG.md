@@ -52,7 +52,7 @@ in the `merkle:object_hash` to ensure data integrity.
 - first release
 
 [Unreleased]: https://github.com/stacchain/merkle-tree-stac-extension/tree/v1.1.1...main
-[v1.1.1]: https://github.com/stacchain/merkle-tree-stac-extension/tree/v1.1.1...v1.1.0
+[v1.1.1]: https://github.com/stacchain/merkle-tree-stac-extension/tree/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/stacchain/merkle-tree-stac-extension/tree/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/stacchain/merkle-tree-stac-extension/tree/v1.0.0-beta.2...v1.0.0
 [v1.0.0-beta.2]: https://github.com/stacchain/merkle-tree-stac-extension/tree/v1.0.0-beta.1...v1.0.0-beta.2
