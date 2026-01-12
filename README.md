@@ -1,7 +1,7 @@
 # Merkle Tree Extension Specification
 
 - **Title:** Merkle Tree
-- **Identifier:** <https://stacchain.github.io/merkle-tree/v1.0.0/schema.json>
+- **Identifier:** <https://stacchain.github.io/merkle-tree/v1.1.0/schema.json>
 - **Field Name Prefix:** `merkle`
 - **Scope:** Item, Collection, Catalog
 - **Extension [Maturity Classification](https://github.com/radiantearth/stac-spec/tree/master/extensions/README.md#extension-maturity):** Proposal
@@ -185,7 +185,10 @@ This JSON allows a client to take the Item's hash, combine it with the hashes in
 1. **Prepare Metadata:**
    - Include all fields specified in `merkle:hash_method.fields`.
    - **Recommendation:** Explicitly include `assets` to capture `file:checksum` values.
-   - If `fields` is `"*"` or `"all"`, include all fields of the object.
+   - **Warning:** It is recommended to **exclude** `links` from the hash, as dynamic URLs 
+   (e.g., API endpoints, signed URLs) can change without altering the underlying data, 
+   which would invalidate the Merkle Root.
+   - If `fields` is `"*"` or `"all"`, include all fields of the object (implementers should be cautious of the warning above).
 2. **Serialize Metadata:**
    - Use canonical JSON serialization (RFC 8785) with sorted keys to ensure reproducibility.
 3. **Compute Hash:**
@@ -208,10 +211,10 @@ To generate a proof for a specific child object (Target) within a tree:
 1. **Identify Target:** Locate the `merkle:object_hash` of the Target object in the sorted list of all children hashes.
 2. **Initialize Path:** Create an empty list for the `path`.
 3. **Traverse Tree:**
-- Pair the Target hash with its **Sibling** (the adjacent hash in the sorted list).
-- **Record Sibling:** Add the Sibling's `hash` and relative `position` ("left" or "right") to the `path`.
-- **Hash Upwards:** Compute the parent hash by concatenating and hashing the pair.
-- **Repeat:** Treat this new parent hash as the current Target and repeat the process until the **Root** is reached.
+   - Pair the Target hash with its **Sibling** (the adjacent hash in the sorted list).
+   - **Record Sibling:** Add the Sibling's `hash` and relative `position` ("left" or "right") to the `path`.
+   - **Hash Upwards:** Compute the parent hash by concatenating and hashing the pair.
+   - **Repeat:** Treat this new parent hash as the current Target and repeat the process until the **Root** is reached.
 4. **Finalize:** The resulting ordered list is the `path`.
 
 ## Examples
@@ -224,7 +227,7 @@ To generate a proof for a specific child object (Target) within a tree:
   "stac_version": "1.1.0",
   "stac_extensions": [
     "https://stac-extensions.github.io/file/v2.1.0/schema.json",
-    "https://stacchain.github.io/merkle-tree/v1.0.0/schema.json"
+    "https://stacchain.github.io/merkle-tree/v1.1.0/schema.json"
   ],
   "id": "item-001",
   "properties": {
@@ -266,7 +269,7 @@ To generate a proof for a specific child object (Target) within a tree:
   },
   "stac_extensions": [
     "https://stac-extensions.github.io/file/v2.1.0/schema.json",
-    "https://stacchain.github.io/merkle-tree/v1.0.0/schema.json"
+    "https://stacchain.github.io/merkle-tree/v1.1.0/schema.json"
   ],
   "links": [
     {
@@ -295,7 +298,7 @@ To generate a proof for a specific child object (Target) within a tree:
   "merkle:root": "f1e2d3c4b5a67890abcdef1234567890abcdef1234567890abcdef1234567890",
   "merkle:hash_method": {
     "function": "sha256",
-    "fields": ["*"],
+    "fields": ["id","title","description"],
     "ordering": "ascending",
     "description": "Computed by including merkle:object_hash values of child objects in ascending order and building the Merkle tree."
   },
@@ -309,7 +312,7 @@ To generate a proof for a specific child object (Target) within a tree:
       "href": "collection-456.json"
     }
   ],
-  "stac_extensions": ["https://stacchain.github.io/merkle/v1.0.0/schema.json"]
+  "stac_extensions": ["https://stacchain.github.io/merkle-tree/v1.1.0/schema.json"]
 }
 ```
 
