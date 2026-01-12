@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [v1.1.1] - 2026-01-12
+
+### Fixed
+
+- Updated **Relation types** section to explicitly define `merkle-proof`, resolving a 
+contradiction where the spec previously stated no new relation types were introduced.
+- Clarified in "Linking to a Proof" that the **Root Catalog** acts as the trust anchor and therefore does not require a proof link.
+
 ## [v1.1.0] - 2026-01-12
 
 ### Added
@@ -43,7 +51,8 @@ in the `merkle:object_hash` to ensure data integrity.
 
 - first release
 
-[Unreleased]: https://github.com/stacchain/merkle-tree-stac-extension/tree/v1.1.0...main
+[Unreleased]: https://github.com/stacchain/merkle-tree-stac-extension/tree/v1.1.1...main
+[v1.1.1]: https://github.com/stacchain/merkle-tree-stac-extension/tree/v1.1.1...v1.1.0
 [v1.1.0]: https://github.com/stacchain/merkle-tree-stac-extension/tree/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/stacchain/merkle-tree-stac-extension/tree/v1.0.0-beta.2...v1.0.0
 [v1.0.0-beta.2]: https://github.com/stacchain/merkle-tree-stac-extension/tree/v1.0.0-beta.1...v1.0.0-beta.2

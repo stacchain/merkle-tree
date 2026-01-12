@@ -132,9 +132,9 @@ dataset, implementations SHOULD provide a **Merkle Proof**
 (also known as an audit path or witness).
 
 ### Linking to a Proof
-STAC objects SHOULD provide a link to their proof using the 
-`merkle-proof` relation. This link may point to a static file 
-(e.g., on S3) or a dynamic API endpoint.
+STAC objects (Items, Collections, and Child Catalogs) SHOULD provide a link to their proof using the 
+`merkle-proof` relation. **Note:** The Root Catalog acts as the trust anchor and therefore 
+does not have a proof.
 
 ```json
 "links": [
@@ -318,8 +318,11 @@ To generate a proof for a specific child object (Target) within a tree:
 
 ## Relation types
 
-This extension does not introduce any new relation types. The standard STAC relation types should be used as applicable in the
-[Link Object](https://github.com/radiantearth/stac-spec/tree/master/item-spec/item-spec.md#link-object).
+This extension introduces one new relation type to be used in the [Link Object](https://github.com/radiantearth/stac-spec/blob/master/commons/links.md#link-object).
+
+| Relation Type | Description |
+| :--- | :--- |
+| `merkle-proof` | Points to a Merkle Inclusion Proof JSON file that enables verification of the object's integrity and membership in the entire hierarchy up to the Root Catalog. (Not applicable to the Root Catalog itself). |
 
 ## Contributing
 
