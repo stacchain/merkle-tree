@@ -4,7 +4,7 @@
   "id": "catalog-001",
   "description": "Sample Catalog with Merkle Root",
   "stac_extensions": [
-    "https://stacchain.github.io/merkle-tree/v1.0.0/schema.json"
+    "https://stacchain.github.io/merkle-tree/v1.1.1/schema.json"
   ],
   "merkle:object_hash": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
   "merkle:root": "f1e2d3c4b5a67890abcdef1234567890abcdef1234567890abcdef1234567890",

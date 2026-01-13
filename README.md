@@ -1,7 +1,7 @@
 # Merkle Tree Extension Specification
 
 - **Title:** Merkle Tree
-- **Identifier:** <https://stacchain.github.io/merkle-tree/v1.1.0/schema.json>
+- **Identifier:** <https://stacchain.github.io/merkle-tree/v1.1.1/schema.json>
 - **Field Name Prefix:** `merkle`
 - **Scope:** Item, Collection, Catalog
 - **Extension [Maturity Classification](https://github.com/radiantearth/stac-spec/tree/master/extensions/README.md#extension-maturity):** Proposal
@@ -227,7 +227,7 @@ To generate a proof for a specific child object (Target) within a tree:
   "stac_version": "1.1.0",
   "stac_extensions": [
     "https://stac-extensions.github.io/file/v2.1.0/schema.json",
-    "https://stacchain.github.io/merkle-tree/v1.1.0/schema.json"
+    "https://stacchain.github.io/merkle-tree/v1.1.1/schema.json"
   ],
   "id": "item-001",
   "properties": {
@@ -269,7 +269,7 @@ To generate a proof for a specific child object (Target) within a tree:
   },
   "stac_extensions": [
     "https://stac-extensions.github.io/file/v2.1.0/schema.json",
-    "https://stacchain.github.io/merkle-tree/v1.1.0/schema.json"
+    "https://stacchain.github.io/merkle-tree/v1.1.1/schema.json"
   ],
   "links": [
     {
