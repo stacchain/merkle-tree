@@ -1,5 +1,5 @@
 {
-  "name": "stac-extension-template",
+  "name": "@stacchain/merkle-tree",
   "version": "1.1.1",
   "scripts": {
     "test": "npm run check-markdown && npm run check-examples",
