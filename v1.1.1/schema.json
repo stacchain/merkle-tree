@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://stacchain.github.io/merkle-tree/v1.0.0/schema.json#",
+  "title": "Merkle Tree Root Extension",
+  "description": "An extension to ensure metadata integrity for STAC Items, Collections, and Catalogs by encoding them in a Merkle tree via hashing.",
+  "oneOf": [
+    {
+      "$comment": "This is the schema for STAC Items.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/stac_extensions"
+        },
+        {
+          "type": "object",
+          "required": ["type", "properties"],
+          "properties": {
+            "type": {
+              "const": "Feature"
+            },
+            "properties": {
+              "type": "object",
+              "required": ["merkle:object_hash"],
+              "properties": {
+                "merkle:object_hash": {
+                  "type": "string",
+                  "description": "A cryptographic hash of the Item's metadata."
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "$comment": "This is the schema for STAC Collections.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/stac_extensions"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "id",
+            "merkle:object_hash",
+            "merkle:hash_method",
+            "merkle:root"
+          ],
+          "properties": {
+            "type": {
+              "const": "Collection"
+            },
+            "merkle:object_hash": {
+              "type": "string",
+              "description": "A cryptographic hash of the Collection's metadata."
+            },
+            "merkle:hash_method": {
+              "$ref": "#/definitions/hash_method",
+              "description": "An object describing the method used to compute the hashes."
+            },
+            "merkle:root": {
+              "type": "string",
+              "description": "The Merkle root hash representing the Collection."
+            }
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    {
+      "$comment": "This is the schema for STAC Catalogs.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/stac_extensions"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "id",
+            "merkle:object_hash",
+            "merkle:hash_method",
+            "merkle:root"
+          ],
+          "properties": {
+            "type": {
+              "const": "Catalog"
+            },
+            "merkle:object_hash": {
+              "type": "string",
+              "description": "A cryptographic hash of the Catalog's metadata."
+            },
+            "merkle:hash_method": {
+              "$ref": "#/definitions/hash_method",
+              "description": "An object describing the method used to compute the hashes."
+            },
+            "merkle:root": {
+              "type": "string",
+              "description": "The Merkle root hash representing the Catalog."
+            }
+          },
+          "additionalProperties": true
+        }
+      ]
+    }
+  ],
+  "definitions": {
+    "stac_extensions": {
+      "type": "object",
+      "required": ["stac_extensions"],
+      "properties": {
+        "stac_extensions": {
+          "type": "array",
+          "contains": {
+            "const": "https://stacchain.github.io/merkle-tree/v1.0.0/schema.json"
+          }
+        }
+      }
+    },
+    "hash_method": {
+      "type": "object",
+      "required": ["function", "fields"],
+      "properties": {
+        "function": {
+          "type": "string",
+          "description": "The cryptographic hash function used (e.g., 'sha256', 'sha3-256')."
+        },
+        "fields": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "enum": ["*", "all"]
+            }
+          ],
+          "description": "An array of fields included in the hash computation. Use '*' or 'all' to indicate all fields."
+        },
+        "ordering": {
+          "type": "string",
+          "description": "Describes how the hashes are ordered when building the Merkle tree."
+        },
+        "description": {
+          "type": "string",
+          "description": "Additional details or notes about the hash computation method."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
