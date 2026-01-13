@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://stacchain.github.io/merkle-tree/v1.0.0/schema.json#",
-  "title": "Merkle Tree Root Extension",
+  "$id": "https://stacchain.github.io/merkle-tree/v1.1.0/schema.json#",
+  "title": "Merkle Tree Extension",
   "description": "An extension to ensure metadata integrity for STAC Items, Collections, and Catalogs by encoding them in a Merkle tree via hashing.",
   "oneOf": [
     {
@@ -27,6 +27,9 @@
                 }
               },
               "additionalProperties": true
+            },
+            "links": {
+              "$ref": "#/definitions/merkle_proof_link"
             }
           }
         }
@@ -62,6 +65,9 @@
             "merkle:root": {
               "type": "string",
               "description": "The Merkle root hash representing the Collection."
+            },
+            "links": {
+              "$ref": "#/definitions/merkle_proof_link"
             }
           },
           "additionalProperties": true
@@ -98,6 +104,9 @@
             "merkle:root": {
               "type": "string",
               "description": "The Merkle root hash representing the Catalog."
+            },
+            "links": {
+              "$ref": "#/definitions/merkle_proof_link"
             }
           },
           "additionalProperties": true
@@ -113,10 +122,28 @@
         "stac_extensions": {
           "type": "array",
           "contains": {
-            "const": "https://stacchain.github.io/merkle-tree/v1.0.0/schema.json"
+            "const": "https://stacchain.github.io/merkle-tree/v1.1.0/schema.json"
           }
         }
       }
+    },
+    "merkle_proof_link": {
+        "type": "array",
+        "items": {
+             "allOf": [
+                 {
+                     "if": {
+                         "properties": { "rel": { "const": "merkle-proof" } }
+                     },
+                     "then": {
+                         "required": ["href", "type"],
+                         "properties": {
+                             "type": { "const": "application/json" }
+                         }
+                     }
+                 }
+             ]
+        }
     },
     "hash_method": {
       "type": "object",
@@ -151,6 +178,26 @@
         }
       },
       "additionalProperties": false
+    },
+    "proof_object": {
+        "description": "Schema for the JSON object returned by the merkle-proof link.",
+        "type": "object",
+        "required": ["target_hash", "root", "path"],
+        "properties": {
+            "target_hash": { "type": "string" },
+            "root": { "type": "string" },
+            "path": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["position", "hash"],
+                    "properties": {
+                        "position": { "enum": ["left", "right"] },
+                        "hash": { "type": "string" }
+                    }
+                }
+            }
+        }
     }
   }
 }
